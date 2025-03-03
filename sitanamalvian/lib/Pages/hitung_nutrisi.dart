@@ -242,3 +242,4 @@ class _HitungNutrisiScreenState extends State<HitungNutrisiScreen> {
     );
   }
 }
+//futra app sistem skripsi ini apakah ping google apakah ini adaah sesuai yang 

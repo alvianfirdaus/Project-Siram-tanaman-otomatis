@@ -5,6 +5,7 @@ import 'package:sitanamalvian/Pages/catatan.dart';
 import 'package:sitanamalvian/Pages/deteksi.dart';
 import 'package:sitanamalvian/Pages/hitung_nutrisi.dart';
 
+
 class DashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {

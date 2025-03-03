@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'dart:async';
 import 'package:sitanamalvian/Routes/routes.dart';
+import 'package:sitanamalvian/Pages/editcatatan.dart';
 
 class CatatanScreen extends StatefulWidget {
   @override
@@ -110,37 +111,72 @@ class _CatatanScreenState extends State<CatatanScreen> {
 
               // List of notes
               Expanded(
-                child: plotData.isNotEmpty && plotData["zcatatan"] != null
-                    ? ListView.builder(
-                        itemCount: (plotData["zcatatan"] as Map).keys.length,
-                        itemBuilder: (context, index) {
-                          var sortedKeys = (plotData["zcatatan"] as Map).keys.toList()
-                            ..sort((a, b) {
-                              return int.parse(b).compareTo(int.parse(a));
-                            });
+              child: plotData.isNotEmpty && plotData["zcatatan"] != null
+                  ? ListView.builder(
+                      itemCount: (plotData["zcatatan"] as Map?)?.keys.length ?? 0,
+                      itemBuilder: (context, index) {
+                        var sortedKeys = (plotData["zcatatan"] as Map?)?.keys.toList() ?? [];
 
-                          String key = sortedKeys[index];
-                          Map<String, dynamic> catatan = (plotData["zcatatan"][key] as Map).cast<String, dynamic>();
+                        if (sortedKeys.isEmpty) return SizedBox(); // Hindari error jika kosong
 
-                          return CatatanCard(
-                            tanggal: catatan["tanggal"] ?? "",
-                            waktu: catatan["waktu"] ?? "",
-                            catatan: catatan["catatan"] ?? "",
-                            onDelete: () async {
-                              try {
-                                // Menghapus data dari Firebase
-                                await databaseReference.child('$selectedPlot/zcatatan/$key').remove();
-                              } catch (e) {
-                                print("Terjadi kesalahan saat menghapus data: $e");
-                              }
-                            },
-                          );
-                        },
-                      )
-                    : Center(
-                        child: Text("Belum ada catatan."),
-                      ),
-              ),
+                        sortedKeys.sort((a, b) => int.parse(b).compareTo(int.parse(a)));
+
+                        String key = sortedKeys[index];
+                        Map<String, dynamic>? catatan =
+                            (plotData["zcatatan"][key] as Map?)?.cast<String, dynamic>();
+
+                        if (catatan == null) return SizedBox(); // Jika null, jangan tampilkan
+
+                        return CatatanCard(
+                          tanggal: catatan["tanggal"] ?? "Tidak ada tanggal",
+                          waktu: catatan["waktu"] ?? "Tidak ada waktu",
+                          catatan: catatan["catatan"] ?? "Tidak ada catatan",
+                          onDelete: () async {
+                            try {
+                              await databaseReference.child('$selectedPlot/zcatatan/$key').remove();
+                            } catch (e) {
+                              print("Terjadi kesalahan saat menghapus data: $e");
+                            }
+                          },
+                          onEdit: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => EditCatatanScreen(
+                                  selectedPlot: selectedPlot,
+                                  catatanKey: key, // Key catatan yang valid
+                                  initialCatatan: catatan["catatan"] ?? "", 
+                                  initialTanggal: catatan["tanggal"] ?? "",
+                                  initialWaktu: catatan["waktu"] ?? "",
+                                ),
+                              ),
+                            );
+                          },
+                          onInfo: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: Text("Detail Catatan"),
+                                content: Text(
+                                  "Tanggal: ${catatan['tanggal'] ?? "Tidak ada"}\n"
+                                  "Waktu: ${catatan['waktu'] ?? "Tidak ada"}\n"
+                                  "Catatan: ${catatan['catatan'] ?? "Tidak ada"}",
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: Text("Tutup"),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    )
+                  : Center(child: Text("Belum ada catatan.")),
+            ),
+
             ],
           ),
         ],
@@ -214,12 +250,16 @@ class CatatanCard extends StatelessWidget {
   final String waktu;
   final String catatan;
   final VoidCallback onDelete;
+  final VoidCallback onEdit;
+  final VoidCallback onInfo;
 
   const CatatanCard({
     required this.tanggal,
     required this.waktu,
     required this.catatan,
     required this.onDelete,
+    required this.onEdit,
+    required this.onInfo,
     Key? key,
   }) : super(key: key);
 
@@ -277,10 +317,29 @@ class CatatanCard extends StatelessWidget {
                   style: TextStyle(fontSize: 14, color: Color.fromARGB(255,0,101,31)),
                 ),
                 SizedBox(height: 8),
-                Text(
-                  catatan,
-                  style: TextStyle(fontSize: 14, color: Colors.black),
-                ),
+                // Row untuk menyusun teks catatan & ikon di satu baris
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Expanded agar teks catatan fleksibel
+                    Expanded(
+                      child: Text(
+                        catatan,
+                        style: TextStyle(fontSize: 14, color: Colors.black),
+                      ),
+                    ),
+                    
+                    // Ikon Edit & Info di kanan sejajar teks
+                    IconButton(
+                      icon: Icon(Icons.edit, color: Colors.blue),
+                      onPressed: onEdit,
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.info, color: Colors.grey),
+                      onPressed: onInfo,
+                    ),
+                  ],
+                )
               ],
             ),
           ),
