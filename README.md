@@ -1,1 +1,1 @@
-<img src = "banner.PNG">
+<img src = "banner.png">
