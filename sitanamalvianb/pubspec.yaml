@@ -32,8 +32,8 @@ dependencies:
     sdk: flutter
   google_fonts: ^6.2.1 # Gunakan versi terbaru dari google_fonts
   
-  firebase_core: ^3.13.0
-  firebase_database: ^11.3.5
+  firebase_core: 2.24.0
+  firebase_database: 10.3.6
   flutter_switch: ^0.3.2
   tflite_flutter: ^0.11.0
   image_picker: ^1.1.2
@@ -42,9 +42,10 @@ dependencies:
   camera: ^0.10.0
   fl_chart: ^0.63.0
   lucide_icons: ^0.257.0
-  firebase_auth: ^5.2.0
+  firebase_auth: 4.12.0
   shared_preferences: ^2.3.2
   mobile_scanner: ^3.5.5
+  flutter_launcher_icons: ^0.14.4
 
 
   # The following adds the Cupertino Icons font to your application.
@@ -55,6 +56,11 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icon/sitanam.png"
+  min_sdk_android: 21 # android min sdk min:16, default 21
   
 
   # The "flutter_lints" package below contains a set of recommended lints to

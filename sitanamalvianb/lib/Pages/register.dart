@@ -16,6 +16,8 @@ class _RegisterPageState extends State<RegisterPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   bool isLoading = false;
+  bool isPasswordVisible = false;
+  bool isConfirmPasswordVisible = false;
 
   Future<void> register() async {
     if (passwordController.text != confirmPasswordController.text) {
@@ -62,7 +64,7 @@ class _RegisterPageState extends State<RegisterPage> {
     } on FirebaseAuthException catch (e) {
       String message = 'Registrasi gagal';
       if (e.code == 'email-already-in-use') {
-        message = 'Email sudah digunakan';
+        message = 'email sudah digunakan';
       }
 
       showDialog(
@@ -126,11 +128,29 @@ class _RegisterPageState extends State<RegisterPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
                 child: Column(
                   children: [
-                    _buildInputField(Icons.person, 'email', emailController),
+                    _buildInputField(Icons.person, 'Email', emailController),
                     const SizedBox(height: 30),
-                    _buildInputField(Icons.vpn_key, 'password', passwordController, isPassword: true),
+                    _buildPasswordField(
+                      'Password',
+                      passwordController,
+                      isPasswordVisible,
+                      (value) {
+                        setState(() {
+                          isPasswordVisible = value;
+                        });
+                      },
+                    ),
                     const SizedBox(height: 30),
-                    _buildInputField(Icons.vpn_key, 'password', confirmPasswordController, isPassword: true),
+                    _buildPasswordField(
+                      'Konfirmasi Password',
+                      confirmPasswordController,
+                      isConfirmPasswordVisible,
+                      (value) {
+                        setState(() {
+                          isConfirmPasswordVisible = value;
+                        });
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -162,11 +182,11 @@ class _RegisterPageState extends State<RegisterPage> {
             const SizedBox(height: 12),
             Text.rich(
               TextSpan(
-                text: 'Sudah Punya akun Login ',
+                text: 'Sudah Punya akun',
                 style: const TextStyle(color: Colors.black54),
                 children: [
                   TextSpan(
-                    text: 'disini',
+                    text: ' Login disini',
                     style: const TextStyle(
                       color: Colors.blue,
                       decoration: TextDecoration.underline,
@@ -190,7 +210,7 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  Widget _buildInputField(IconData icon, String hint, TextEditingController controller, {bool isPassword = false}) {
+  Widget _buildInputField(IconData icon, String hint, TextEditingController controller) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.grey.shade300,
@@ -198,10 +218,40 @@ class _RegisterPageState extends State<RegisterPage> {
       ),
       child: TextField(
         controller: controller,
-        obscureText: isPassword,
         decoration: InputDecoration(
           prefixIcon: Icon(icon),
           hintText: hint,
+          border: InputBorder.none,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPasswordField(
+    String hint,
+    TextEditingController controller,
+    bool isPasswordVisible,
+    Function(bool) onVisibilityChanged,
+  ) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey.shade300,
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: TextField(
+        controller: controller,
+        obscureText: !isPasswordVisible,
+        decoration: InputDecoration(
+          prefixIcon: const Icon(Icons.vpn_key),
+          hintText: hint,
+          suffixIcon: IconButton(
+            icon: Icon(
+              isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+            ),
+            onPressed: () {
+              onVisibilityChanged(!isPasswordVisible);
+            },
+          ),
           border: InputBorder.none,
         ),
       ),

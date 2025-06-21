@@ -15,6 +15,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController passwordController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   bool isLoading = false;
+  bool isPasswordVisible = false;  // Added to manage password visibility
 
   Future<void> login() async {
     setState(() => isLoading = true);
@@ -120,10 +121,20 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       child: TextField(
                         controller: passwordController,
-                        obscureText: true,
-                        decoration: const InputDecoration(
-                          prefixIcon: Icon(Icons.vpn_key),
+                        obscureText: !isPasswordVisible,  // Toggle visibility based on the state
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.vpn_key),
                           hintText: 'Password',
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                isPasswordVisible = !isPasswordVisible;  // Toggle password visibility
+                              });
+                            },
+                          ),
                           border: InputBorder.none,
                         ),
                       ),
@@ -145,7 +156,7 @@ class _LoginPageState extends State<LoginPage> {
                 : ElevatedButton(
                     onPressed: login,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFF006400),
+                      backgroundColor: const Color(0xFF006400),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(15),
                       ),
@@ -157,13 +168,13 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
             const SizedBox(height: 12),
-           Text.rich(
+            Text.rich(
               TextSpan(
                 text: 'Belum Punya Akun? ',
                 style: const TextStyle(color: Colors.black54),
                 children: [
                   TextSpan(
-                    text: 'di sini',
+                    text: 'Register di sini',
                     style: const TextStyle(
                       color: Colors.blue,
                       decoration: TextDecoration.underline,

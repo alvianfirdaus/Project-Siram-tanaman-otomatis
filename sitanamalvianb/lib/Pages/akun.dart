@@ -89,7 +89,7 @@ class _AkunScreenState extends State<AkunScreen> {
         centerTitle: true,
         automaticallyImplyLeading: false, // Tambahkan ini
         title: const Text(
-          'Profil',
+          'Akun',
           style: TextStyle(
             color: Colors.white,
             fontSize: 20,

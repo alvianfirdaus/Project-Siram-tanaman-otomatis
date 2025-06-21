@@ -17,7 +17,7 @@ class _HitungNutrisiScreenState extends State<HitungNutrisiScreen> {
   bool showResult = false; // Flag untuk menampilkan hasil
 
   final DatabaseReference databaseReference = FirebaseDatabase.instance.ref();
-  
+   DateTime? selectedDate;
 
   Future<void> _loadSelectedPlot() async {
     final prefs = await SharedPreferences.getInstance();
@@ -51,6 +51,7 @@ class _HitungNutrisiScreenState extends State<HitungNutrisiScreen> {
   String rekomendasiPupuk = '';
   String luasDerajat = '';
 
+
   @override
   void initState() {
     super.initState();
@@ -60,47 +61,58 @@ class _HitungNutrisiScreenState extends State<HitungNutrisiScreen> {
   }
 
   Future<void> ambilRataRataNPK() async {
-    String plotKey = selectedPlot.toLowerCase().replaceAll(' ', '');
-    DatabaseReference ref = FirebaseDatabase.instance.ref('$plotKey/zhistory');
-    DataSnapshot snapshot = await ref.get();
+  if (selectedPlot.isEmpty || selectedDate == null) return;
 
-    if (snapshot.exists) {
-      Map<String, dynamic> data = Map<String, dynamic>.from(snapshot.value as Map);
-      double totalN = 0, totalP = 0, totalK = 0;
-      int jumlah = 0;
+  final plotKey = selectedPlot.toLowerCase().replaceAll(' ', '');
+  final dateKey = DateFormat('yyyy_MM_dd').format(selectedDate!);
 
-      String bulanSekarang = DateFormat('MM').format(DateTime.now());
+  final snapshot = await FirebaseDatabase.instance
+      .ref()
+      .child('$plotKey/zhistory/$dateKey')
+      .get();
 
-      data.forEach((date, timeData) {
-        if (date.substring(5, 7) == bulanSekarang) {
-          (timeData as Map).forEach((time, values) {
-            if (values != null && values is Map) {
-              double n = (values['n'] ?? 0).toDouble();
-              double p = (values['p'] ?? 0).toDouble();
-              double k = (values['k'] ?? 0).toDouble();
+  if (snapshot.exists) {
+    double totalN = 0;
+    double totalP = 0;
+    double totalK = 0;
+    int count = 0;
 
-              totalN += n;
-              totalP += p;
-              totalK += k;
-              jumlah++;
-            }
-          });
-        }
+    final dataPerJam = snapshot.value as Map<dynamic, dynamic>;
+
+    dataPerJam.forEach((jam, data) {
+      final dataMap = Map<String, dynamic>.from(data);
+      final n = dataMap['n'] ?? 0;
+      final p = dataMap['p'] ?? 0;
+      final k = dataMap['k'] ?? 0;
+
+      totalN += n.toDouble();
+      totalP += p.toDouble();
+      totalK += k.toDouble();
+      count++;
+    });
+
+    if (count > 0) {
+      final rataN = totalN / count;
+      final rataP = totalP / count;
+      final rataK = totalK / count;
+
+      setState(() {
+        nController.text = rataN.toStringAsFixed(1);
+        pController.text = rataP.toStringAsFixed(1);
+        kController.text = rataK.toStringAsFixed(1);
       });
 
-      if (jumlah > 0) {
-        setState(() {
-          nController.text = (totalN / jumlah).toStringAsFixed(1);
-          pController.text = (totalP / jumlah).toStringAsFixed(1);
-          kController.text = (totalK / jumlah).toStringAsFixed(1);
-        });
-      } else {
-        print("Tidak ada data bulan ini.");
-      }
-    } else {
-      print("Data tidak ditemukan.");
+      print("Rata-rata N: $rataN, P: $rataP, K: $rataK");
     }
+  } else {
+    print("Tidak ada data pada tanggal $dateKey");
+    setState(() {
+      nController.text = "";
+      pController.text = "";
+      kController.text = "";
+    });
   }
+}
 
   double rendah(double x) => x <= 50 ? 1.0 : x <= 100 ? (100 - x) / 50 : 0.0;
   double sedang(double x) => x <= 50 ? 0.0 : x <= 100 ? (x - 50) / 50 : x <= 150 ? (150 - x) / 50 : 0.0;
@@ -182,51 +194,22 @@ class _HitungNutrisiScreenState extends State<HitungNutrisiScreen> {
       }
     }
     //--------------------------------------menghitung agregasi Tidak Subur
-    double ts_ls = 1 / 2 * 25 * 1; // Luas derajat kurva keanggotaan output
-    double ts_dk1 = 25 + (ts_ls * alphaMax['Tidak Subur']!); // Domain terkecil (dynamic based on implication)
-    double ts_dk = ts_dk1 - 25; // Domain terkecil
-    double ts_db1 = 50 - (ts_ls * alphaMax['Tidak Subur']!);
-    double ts_db = ts_db1 - 25;
-    double ts_ab = ts_db - ts_dk;
-    double ts_t = 1 - alphaMax['Tidak Subur']!;
-    double ts_lb = alphaMax['Tidak Subur']! * ts_ab * ts_t;
-    double ts_ls1 = ts_ls - ts_lb;
-    double ts_m = 25 * ts_ls1;
-    double ts_c10 = alphaMax['Tidak Subur']! * ts_m;
-    double ts_d10 = alphaMax['Tidak Subur']! * ts_ls1;
+   double koreksi = 0.93;  // kurang lebih untuk mendekati hasil MATLAB
+    const double centroidTS = 25.0;
+    const double centroidCS = 60.0;
+    const double centroidS = 86.7;
 
-    // ---------------------------Menghitung agregasi Cukup Subur
-    double cs_ls = 1 / 2 * 40 * 1; // Luas derajat kurva keanggotaan output
-    double cs_dk1 = 40 + (cs_ls * alphaMax['Cukup Subur']!); // Domain terkecil (dynamic based on implication)
-    double cs_dk = cs_dk1 - 40; // Domain terkecil
-    double cs_db1 = 80 - (cs_ls * alphaMax['Cukup Subur']!);
-    double cs_db = cs_db1 - 40;
-    double cs_ab = cs_db - cs_dk;
-    double cs_t = 1 - alphaMax['Cukup Subur']!;
-    double cs_lb = alphaMax['Cukup Subur']! * cs_ab * cs_t;
-    double cs_ls1 = cs_ls - cs_lb;
-    double cs_m = 60 * cs_ls1;
-    double cs_c10 = alphaMax['Cukup Subur']! * cs_m;
-    double cs_d10 = alphaMax['Cukup Subur']! * cs_ls1;
+    const double lebarAlas = 50.0;
 
-    // -------------------------------------Menghitung agregasi Subur
-    double s_ls = 1 / 2 * 30 * 1; // Luas derajat kurva keanggotaan output
-    double s_dk1 = 30 + (s_ls * alphaMax['Subur']!); // Domain terkecil (dynamic based on implication)
-    double s_dk = s_dk1 - 30; // Domain terkecil
-    double s_db1 = 100 - (s_ls * alphaMax['Subur']!);
-    double s_db = s_db1 - 30;
-    double s_ab = s_db - s_dk;
-    double s_t = 1 - alphaMax['Subur']!;
-    double s_lb = alphaMax['Subur']! * s_ab * s_t;
-    double s_ls1 = s_ls - s_lb;
-    double s_m = 90 * s_ls1;
-    double s_c10 = alphaMax['Subur']! * s_m;
-    double s_d10 = alphaMax['Subur']! * s_ls1;
+    double luasTS = 0.5 * lebarAlas * alphaMax['Tidak Subur']!;
+    double luasCS = 0.5 * 40 * alphaMax['Cukup Subur']!;
+    double luasS = 0.5 * 20 * alphaMax['Subur']!;
 
-    //-----------------------------------Defuzzifikasi W (menggunakan formula yang diberikan)
-    double numerator = ts_c10 + cs_c10 + s_c10;
-    double denominator = ts_d10 + cs_d10 + s_d10;
-    double result = numerator / denominator;
+// Asumsi semua fungsi keanggotaan output adalah segitiga simetris
+
+
+double result = ((0.5 * 50 * alphaMax['Tidak Subur']! * 25) + ( 0.5 * 40* alphaMax['Cukup Subur']! * 60) + (0.5 * 20*alphaMax['Subur']! * 86.7)) /
+                   (luasTS + luasCS + luasS);
 
 
     String kategoriKesuburan = '';
@@ -248,24 +231,29 @@ class _HitungNutrisiScreenState extends State<HitungNutrisiScreen> {
     });
   }
 
+int umurTanaman = 0;
+String faseTanaman = "";
+
+
+
 @override
 Widget build(BuildContext context) {
   return Scaffold(
     body: Stack(
       children: [
-        // Gambar Header
+        // Header Image
         Container(
-          height: 250,
+          height: 230,
           width: double.infinity,
           decoration: BoxDecoration(
             image: DecorationImage(
-              image: AssetImage('assets/images/headerlingkungan.png'),
+              image: AssetImage('assets/images/RekomendasiPupuk.png'),
               fit: BoxFit.cover,
             ),
           ),
         ),
 
-        // Plot Mengambang di Tengah
+        // Plot di Tengah
         Positioned(
           top: 158,
           left: 90,
@@ -280,7 +268,7 @@ Widget build(BuildContext context) {
           ),
         ),
 
-        // Isi Konten (di bawah header dan PlotBox)
+        // Konten
         Padding(
           padding: const EdgeInsets.only(top: 250),
           child: Column(
@@ -289,70 +277,150 @@ Widget build(BuildContext context) {
                 child: SingleChildScrollView(
                   padding: EdgeInsets.symmetric(horizontal: 16),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Pilih Fase Tanaman
                       Text(
-                        "Silahkan pilih fase tanaman anda:",
+                        "Pilih tanggal untuk menghitung rata-rata NPK:",
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                       ),
                       SizedBox(height: 8),
-                      DropdownButton<String>(
-                        value: fase,
-                        hint: Text('Pilih fase tanaman'),
-                        isExpanded: true,
-                        onChanged: (String? newValue) {
+                      GestureDetector(
+                        onTap: () async {
+                          DateTime? pickedDate = await showDatePicker(
+                            context: context,
+                            initialDate: selectedDate ?? DateTime.now(),
+                            firstDate: DateTime(2023),
+                            lastDate: DateTime.now(),
+                          );
+                          if (pickedDate != null) {
+                            setState(() {
+                              selectedDate = pickedDate;
+                            });
+                            await ambilRataRataNPK();
+                          }
+                        },
+                        child: Container(
+                          padding: EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            selectedDate != null
+                                ? DateFormat('dd MMMM yyyy').format(selectedDate!)
+                                : 'Pilih tanggal',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 16),
+
+                      Text(
+                        "Masukkan umur tanaman anda:",
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                      SizedBox(height: 8),
+                      TextField(
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(),
+                          hintText: 'Contoh: 30',
+                        ),
+                        onChanged: (value) {
                           setState(() {
-                            fase = newValue!;
+                            umurTanaman = int.tryParse(value) ?? 0;
+                            faseTanaman = umurTanaman <= 42 ? 'Vegetatif' : 'Generatif';
+                            fase = faseTanaman;
                           });
                         },
-                        items: <String>['Vegetatif', 'Generatif']
-                            .map<DropdownMenuItem<String>>((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
                       ),
+                      SizedBox(height: 16),
 
                       if (fase != null) ...[
-                        SizedBox(height: 20),
-                        Center(
-                          child: ElevatedButton(
-                            onPressed: hitungFuzzy,
-                            child: Text('Hitung Rekomendasi Pupuk'),
+                        ElevatedButton(
+                          onPressed: hitungFuzzy,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color.fromARGB(255, 39, 128, 15),
+                            shape: StadiumBorder(),
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          child: Text(
+                            'Hitung',
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ],
 
                       if (hasilKesuburan.isNotEmpty) ...[
                         SizedBox(height: 30),
-                        Text(
-                          "Berikut adalah rata-rata kandungan N, P, dan K lahan anda:",
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                        ),
-                        SizedBox(height: 10),
-                        TextField(
-                          controller: nController,
-                          readOnly: true,
-                          decoration: InputDecoration(labelText: 'Nilai N (otomatis)'),
-                        ),
-                        TextField(
-                          controller: pController,
-                          readOnly: true,
-                          decoration: InputDecoration(labelText: 'Nilai P (otomatis)'),
-                        ),
-                        TextField(
-                          controller: kController,
-                          readOnly: true,
-                          decoration: InputDecoration(labelText: 'Nilai K (otomatis)'),
-                        ),
-                        SizedBox(height: 30),
-                        Text(
-                          'Saat ini tanah anda memiliki unsur hara "$luasDerajat" '
-                          'dengan hasil perhitungan fuzzy Mamdani "$hasilKesuburan". '
-                          'Anda dianjurkan menambahkan pupuk "$rekomendasiPupuk".',
-                          style: TextStyle(fontSize: 16),
+                        Container(
+                          padding: EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black12,
+                                blurRadius: 6,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Berikut adalah rata rata kandungan N, P dan K lahan anda :",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              SizedBox(height: 12),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text("Nitrogen (N)"),
+                                  Text("${nController.text} mg/kg", style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+                                ],
+                              ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text("Phospor (P)"),
+                                  Text("${pController.text} mg/kg", style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+                                ],
+                              ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text("Kalium (K)"),
+                                  Text("${kController.text} mg/kg", style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+                                ],
+                              ),
+                              Divider(height: 30, thickness: 1),
+                              Text.rich(
+                                TextSpan(
+                                  style: TextStyle(fontSize: 16, color: Colors.black),
+                                  children: [
+                                    TextSpan(text: 'Saat ini tanaman anda berada di fase '),
+                                    TextSpan(text: '"$faseTanaman"', style: TextStyle(fontWeight: FontWeight.bold)),
+                                    TextSpan(text: ' dengan kadar unsur hara '),
+                                    TextSpan(text: '"$luasDerajat"', style: TextStyle(fontWeight: FontWeight.bold)),
+                                    TextSpan(text: ' dan hasil perhitungan fuzzi mamdani '),
+                                    TextSpan(text: '"$hasilKesuburan"', style: TextStyle(fontWeight: FontWeight.bold)),
+                                    TextSpan(text: '. Anda dianjurkan menambahkan pupuk '),
+                                    TextSpan(text: '"$rekomendasiPupuk"', style: TextStyle(fontWeight: FontWeight.bold)),
+                                    TextSpan(text: '.'), 
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
 

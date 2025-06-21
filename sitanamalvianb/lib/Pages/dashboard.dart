@@ -62,7 +62,7 @@ Widget build(BuildContext context) {
               width: double.infinity,
               decoration: BoxDecoration(
                 image: DecorationImage(
-                  image: AssetImage('assets/images/headerdashboardref3.png'),
+                  image: AssetImage('assets/images/DashboardHeader.png'),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -109,8 +109,8 @@ Widget build(BuildContext context) {
                       },
                     ),
                     DashboardItem(
-                      imagePath: 'assets/images/script.png',
-                      label: 'Hitung Nutrisi',
+                      imagePath: 'assets/images/icondeteksi.png',
+                      label: 'Rekomendasi Pupuk',
                       onTap: () {
                         Navigator.push(
                           context,
@@ -231,28 +231,32 @@ class DashboardItem extends StatelessWidget {
               ),
             ],
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Image.asset(
-                imagePath,
-                width: 48,
-                height: 48,
-              ),
-              SizedBox(height: 16),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.green[900],
+          child: Center( // Tambahkan Center agar seluruh konten di tengah
+            child: Column(
+              mainAxisSize: MainAxisSize.min, // Tambahan agar rapat
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center, // Sejajarkan ke tengah horizontal
+              children: [
+                Image.asset(
+                  imagePath,
+                  width: 48,
+                  height: 48,
                 ),
-              ),
-            ],
+                SizedBox(height: 12),
+                Text(
+                  label,
+                  textAlign: TextAlign.center, // Tambahan ini untuk memastikan teks di tengah
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.green[900],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
-  
 }

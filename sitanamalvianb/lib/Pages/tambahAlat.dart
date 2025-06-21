@@ -57,17 +57,33 @@ class _TambahAlatPageState extends State<TambahAlatPage> {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Berhasil'),
+            title: const Text(
+                'Berhasil',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             content: Text('Berhasil terkoneksi dengan $plotName'),
             actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  Navigator.pushReplacementNamed(context, '/daftaralatpage');
-                },
-                child: const Text('OK'),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.pushReplacementNamed(context, '/daftaralatpage');
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green, // Tombol hijau
+                    foregroundColor: Colors.white, // Teks putih
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30), // Ujung membulat
+                    ),
+                  ),
+                  child: const Text('OK'),
+                ),
               ),
-            ],
+            ),
+          ],
           ),
         );
       } else {
@@ -119,52 +135,80 @@ class _TambahAlatPageState extends State<TambahAlatPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                "Scan atau Masukkan ID Perangkat",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+              const Center(
+                child: Text(
+                  "Arahkan kamera ke QR Code Perangkat",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
               ),
               const SizedBox(height: 16),
-              SizedBox(
-                height: 300,
-                child: MobileScanner(
-                  fit: BoxFit.cover,
-                  onDetect: (BarcodeCapture capture) {
-                    final barcode = capture.barcodes.firstOrNull;
-                    if (barcode != null) {
-                      _onScan(barcode);
-                    }
-                  },
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _alatController,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'ID Perangkat',
-                ),
-              ),
-              const SizedBox(height: 16),
-              Center(
-                child: ElevatedButton(
-                  onPressed: _connectDevice,
-                  child: const Text('Connect'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
+              ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: SizedBox(
+                  height: 300,
+                  child: MobileScanner(
+                    fit: BoxFit.cover,
+                    onDetect: (BarcodeCapture capture) {
+                      final barcode = capture.barcodes.firstOrNull;
+                      if (barcode != null) {
+                        _onScan(barcode);
+                      }
+                    },
                   ),
                 ),
               ),
-            ],
+              const SizedBox(height: 16),
+              TextFormField(
+                textAlign: TextAlign.center,
+                textAlignVertical: TextAlignVertical.center,
+                controller: _alatController,
+                enabled: false, // Membuat kolom tidak bisa diketik
+                style: const TextStyle(fontWeight: FontWeight.bold),
+                decoration: const InputDecoration(
+                  // labelText: 'ID Perangkat',
+                  filled: true,
+                  fillColor: Color.fromARGB(255, 224, 224, 224), // Warna latar belakang abu-abu
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(20)),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                ),
+              ),
+              const SizedBox(height: 16),
+                SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _connectDevice,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color.fromARGB(255, 0, 100, 0),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  child: const Text(
+                    'connect',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                ),
+              ),
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  ],
-),
+    ],
+  ),
 
 
     );

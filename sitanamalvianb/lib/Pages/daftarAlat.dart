@@ -60,27 +60,37 @@ class _DaftarAlatPageState extends State<DaftarAlatPage> {
   }
 
   void showDeleteConfirmationDialog(String plotName) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Hapus Perangkat'),
-        content: Text('Apakah Anda yakin ingin menghapus perangkat "$plotName"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Tidak'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              await deleteDeviceForCurrentUser(plotName);
-            },
-            child: const Text('Iya'),
-          ),
-        ],
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text(
+        'Hapus Perangkat',
+        style: TextStyle(fontWeight: FontWeight.bold),
       ),
-    );
-  }
+      content: Text('Apakah Anda yakin ingin menghapus perangkat "$plotName"?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Tidak'),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            Navigator.pop(context);
+            await deleteDeviceForCurrentUser(plotName);
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Color.fromARGB(255, 0, 100, 0), // Warna hijau
+            foregroundColor: Colors.white, // Teks putih
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10), // Rounded
+            ),
+          ),
+          child: const Text('Iya'),
+        ),
+      ],
+    ),
+  );
+}
 
   Future<void> deleteDeviceForCurrentUser(String plotName) async {
     try {
